@@ -17,6 +17,7 @@
                  [org.clojure/clojurescript "1.9.36"
                   :scope "provided"]
                  [secretary "1.2.3"]
+                 [markdown-clj "0.9.89"]
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]]
 
