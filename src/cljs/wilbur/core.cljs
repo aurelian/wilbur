@@ -6,24 +6,39 @@
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]))
 
+
+;; ------------------------
+;; Forward
+
+(declare post-path)
+(declare edit-post-path)
 ;; ------------------------
 ;; App State
-(def app-state (r/atom {:posts [{:id 1 :body "## Hello World\nThis is a list with items:\n* Item 1\n* Item 2" :tags ["day2day" "real life"]}
-                                {:id 2 :body "## Save The Idea\nBecause this is something *else*." :tags ["real life" "programming"]}]}))
+
+(def app-state (r/atom {:posts [{:id 1 :title "Hello World" :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2"
+                                 :author "aurelian" :category "day2day"}
+                                {:id 2 :title "Compile IT!" :body "### Save The Idea\nBecause this is something *else*."
+                                 :author "aurelian" :category "real life"}]}))
+
+;; ------------------------
+;; Utils
+
+(defn find-post [post-id]
+  (some #(if (= (js/parseInt post-id) (:id %)) %) (:posts @app-state)))
 
 ;; ------------------------
 ;; Components
 
-(defn markdown-component [text]
+(defn html [text]
   [:div {:class "body" :dangerouslySetInnerHTML {:__html text}}])
-
-(defn tags-component [tag-list]
-  [:p>em (str/join ", " tag-list)])
 
 (defn post-component [post]
   [:div {:id (:id post) :class "post"}
-   [markdown-component (md/md->html (:body post))]
-   [tags-component (:tags post)]])
+   [:h2>a {:href (post-path post)} (:title post)]
+   [html (md/md->html (:body post))]
+   [:div
+    [:p>em (str "#" (:category post))]
+    [:a {:href (edit-post-path post)} "edit"]]])
 
 (defn posts-component []
   [:div
@@ -33,26 +48,55 @@
 ;; -------------------------
 ;; Views
 
-(defn home-page []
-  [:div [:h1 "Welcome to wilbur"]
-   [posts-component]
-   [:div [:a {:href "/about"} "go to about page"]]])
+(defn layout [content]
+  [:div
+    [:header>h1>a {:href "/"} "Wilbur Whateley"]
+    [:div content]
+    [:footer>a {:href "/about"} "go to about page"]])
+
+(defn not-found-page [message]
+  [layout
+   [:div message]])
+
+(defn posts-page []
+  [layout
+   [posts-component]])
+
+(defn post-form-component [post]
+  [:div "Hello"])
+
+(defn post-page [post-id]
+  (if-let [post (find-post post-id)]
+    [layout [post-component post]]
+    [not-found-page (str "Post with id= '" post-id "` was not found")]))
+
+(defn edit-post-page [post-id]
+  (if-let [post (find-post post-id)]
+    [layout [post-form-component post]]
+    [not-found-page (str "Post with id= '" post-id "` was not found")]))
 
 (defn about-page []
-  [:div [:h2 "About wilbur"]
-   [:div [:a {:href "/"} "go to the home page"]]])
+  [layout [:div "About Wilbur Whateley"]])
 
 (defn current-page []
   [:div [(session/get :current-page)]])
 
 ;; -------------------------
 ;; Routes
-
 (secretary/defroute "/" []
-  (session/put! :current-page #'home-page))
+  (session/put! :current-page posts-page))
+
+(secretary/defroute edit-post-path "/posts/:id/edit" [id]
+  (session/put! :current-page #(edit-post-page id)))
+
+(secretary/defroute post-path "/posts/:id" [id]
+  (session/put! :current-page #(post-page id)))
 
 (secretary/defroute "/about" []
   (session/put! :current-page #'about-page))
+
+(secretary/defroute "*" []
+  (session/put! :current-page #(not-found-page "Page was not found")))
 
 ;; -------------------------
 ;; Initialize app
