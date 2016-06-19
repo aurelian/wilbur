@@ -1,3 +1,4 @@
+/* http://www.colourlovers.com/palette/3689674/Massaging_Colours_II */
 body {
   height: 100%;
   width: 65%;
@@ -10,8 +11,8 @@ body {
 }
 
 h1, h2, h3 {
-  color: #000;
 }
+
 h1 {
   font-size: 2.5rem
 }
@@ -25,10 +26,25 @@ h3 {
 }
 
 a {
-  color: #F98E70;
+  color: #7CBAD9;
   text-decoration: none;
 }
 
 a:hover {
   text-decoration: underline;
 }
+
+h2.title a {
+  color: #D89F3C;
+}
+
+h2.title a:hover {
+  text-decoration: none;
+}
+
+article.post {
+  background-color: #E4E2DF;
+  padding: 15px;
+  margin: 15px 0px;
+}
+
