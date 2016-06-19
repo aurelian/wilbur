@@ -11,6 +11,7 @@
 (declare root-path)
 (declare post-path)
 (declare edit-post-path)
+(declare new-post-path)
 (declare about-path)
 
 ;; ------------------------
@@ -71,7 +72,9 @@
   [:div
     [:header>h1 (link-to (root-path) "Wilbur Whateley")]
     [:div content]
-    [:footer (link-to (about-path) "go to about page")]])
+    [:footer [:ul
+              [:li (link-to (new-post-path) "new post")]
+              [:li (link-to (about-path) "go to about page")]]]])
 
 (defn not-found-page [message]
   [layout
@@ -81,13 +84,18 @@
   [layout
    [posts-component]])
 
+(defn submit-post! [post]
+  (println post))
+
 (defn post-form-component [post]
   [:div
    [:h3 (str "Edit post " (:title post))]
    [:div
      [text-input post :title "Title"]]
    [:div
-     [text-area post :body]]])
+     [text-area post :body]]
+   [:div
+    [:button {:on-click #()}]]])
 
 (defn post-page [post-id]
   (if-let [post (find-post post-id)]
@@ -98,6 +106,11 @@
   (if-let [post (find-post post-id)]
     [layout [post-form-component post]]
     [not-found-page (str "Post with id= '" post-id "` was not found")]))
+
+(defn new-post-page []
+  [layout
+   (let [new-post (atom {:is-new true})]
+   [post-form-component @new-post])])
 
 (defn about-page []
   [layout [:div "About Wilbur Whateley"]])
@@ -112,6 +125,9 @@
 
 (secretary/defroute root-path "/" []
   (session/put! :current-page posts-page))
+
+(secretary/defroute new-post-path "/posts/new" []
+  (session/put! :current-page #(new-post-page)))
 
 (secretary/defroute post-path "/posts/:id" [id]
   (session/put! :current-page #(post-page id)))
