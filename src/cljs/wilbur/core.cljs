@@ -95,7 +95,7 @@
    [:div
      [text-area post :body]]
    [:div
-    [:button {:on-click #()}]]])
+    [:button {:on-click #(secretary/dispatch! (root-path))} "Save Post"]]])
 
 (defn post-page [post-id]
   (if-let [post (find-post post-id)]
