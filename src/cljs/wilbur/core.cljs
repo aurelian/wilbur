@@ -17,64 +17,85 @@
 ;; ------------------------
 ;; App State
 
-(def app-state (r/atom {:posts [{:id 1 :title "Hello World" :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2"
+(def app-state (r/atom {:posts [{:id 3 :title "Hello World"
+                                 :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2"
                                  :author "aurelian" :category "day2day"}
-                                {:id 2 :title "Compile IT!" :body "### Save The Idea\nBecause this is something *else*."
+                                {:id 8 :title "Compile IT!"
+                                 :body "### Save The Idea\nBecause this is something *else*."
                                  :author "aurelian" :category "real life"}]}))
 
 ;; ------------------------
 ;; Utils
 
-(defn find-post [post-id]
-  (some #(if (= (js/parseInt post-id) (:id %)) %) (:posts @app-state)))
+(defn find-post-index [post-id]
+  (some #(if (= (js/parseInt post-id) (:id %)) (.indexOf (:posts @app-state) %)) (:posts @app-state)))
 
-(defn set-value! [post field value]
-  (let [idx (.indexOf (:posts @app-state) post)] ;; das ist nicht optimal xD
-    (swap! app-state assoc-in [:posts idx field] value)))
+(defn find-post-cursor [post-id]
+  (r/cursor app-state [:posts (find-post-index post-id)]))
+
+(defn update-field [cursor field value]
+ (swap! cursor assoc field value))
+
+;; TODO: save it to backend
+(defn save-post [cursor id]
+  (println cursor)
+  (secretary/dispatch! (post-path {:id id})))
 
 ;; ------------------------
 ;; Components
 
-(defn text-input [o field & label] ;; attributes]
-  [:input {:type "text"
-           :name field
-           :defaultValue (field o)
-           :on-change #(set-value! o field (-> % .-target .-value))}])
-
-(defn text-area [o field & label] ;; attributes]
-  [:textarea {:name field
-              :on-change #(set-value! o field (-> % .-target .-value))
-              :defaultValue (field o)}])
-
-(defn link-to [path text];; & attributes]
+(defn LinkTo [path text];; & attributes]
   [:a {:href path} text])
 
-(defn html [text]
+(defn Html [text]
   [:section {:class "body" :dangerouslySetInnerHTML {:__html text}}])
 
-(defn post-component [post]
-  [:article {:id (str "post-" (:id post)) :class "post"}
-   [:h2{:class "title"} [link-to (post-path post) (:title post)]]
-   [html (md/md->html (:body post))]
-   [:div
-    [:p>em (str "#" (:category post))]
-    [link-to (edit-post-path post) "edit"]]])
+(defn InputText [cursor field value]
+  [:div.input-field
+    [:input {:value value
+           :on-change #(update-field cursor field (.. % -target -value))}]])
 
-(defn posts-component []
+(defn TextArea [cursor field value]
+  [:div.input-field
+    [:textarea {:value value
+                :rows 20 :cols 50
+                :on-change #(update-field cursor field (.. % -target -value))}]])
+
+(defn PostForm [post-cursor]
+  (let [{:keys [id title body category]} @post-cursor]
+    [:div.post-form
+     [InputText post-cursor :title title]
+     [TextArea post-cursor :body body]
+     [:div
+      [:button {:on-click #(save-post post-cursor id)} "Save Post"]]]))
+
+(defn Post [post-cursor editing]
+  (let [{:keys [id title body category]} @post-cursor]
+    [:article.post {:id (str "post-" id)}
+     [:h2.title [LinkTo (post-path {:id id}) title]]
+     [Html (md/md->html body)]
+     [:div
+      [:p>em (str "#" category)]
+      (if editing
+        [PostForm post-cursor]
+        [LinkTo (edit-post-path {:id id}) "edit"])]]))
+
+(defn Posts []
   [:div
-   (for [post (:posts @app-state)]
-     ^{:key (:id post)} [post-component post])])
+   (for [idx (range (count (:posts @app-state)))]
+      (let [post-cursor (r/cursor app-state [:posts idx])]
+          ^{:key idx} [Post post-cursor false]))])
 
 ;; -------------------------
 ;; Views
 
 (defn layout [content]
-  [:div
-    [:header>h1 (link-to (root-path) "Wilbur Whateley")]
-    [:div content]
+  [:div.layout
+    [:header>h1 (LinkTo (root-path) "Wilbur Whateley")]
+    [:div.content content]
     [:footer [:ul
-              [:li (link-to (new-post-path) "new post")]
-              [:li (link-to (about-path) "go to about page")]]]])
+              [:li (LinkTo (new-post-path) "new post")]
+              [:li (LinkTo (about-path) "go to about page")]]]])
 
 (defn not-found-page [message]
   [layout
@@ -82,35 +103,21 @@
 
 (defn posts-page []
   [layout
-   [posts-component]])
-
-(defn submit-post! [post]
-  (println post))
-
-(defn post-form-component [post]
-  [:div
-   [:h3 (str "Edit post " (:title post))]
-   [:div
-     [text-input post :title "Title"]]
-   [:div
-     [text-area post :body]]
-   [:div
-    [:button {:on-click #(secretary/dispatch! (root-path))} "Save Post"]]])
+   [Posts]])
 
 (defn post-page [post-id]
-  (if-let [post (find-post post-id)]
-    [layout [post-component post]]
+  (if-let [post-cursor (find-post-cursor post-id)]
+    [layout [Post post-cursor]]
     [not-found-page (str "Post with id= '" post-id "` was not found")]))
 
 (defn edit-post-page [post-id]
-  (if-let [post (find-post post-id)]
-    [layout [post-form-component post]]
+  (if-let [post-cursor (find-post-cursor post-id)]
+    [layout [Post post-cursor true]]
     [not-found-page (str "Post with id= '" post-id "` was not found")]))
 
 (defn new-post-page []
   [layout
-   (let [new-post (atom {:is-new true})]
-   [post-form-component @new-post])])
+    [:div "New Post Page"]])
 
 (defn about-page []
   [layout [:div "About Wilbur Whateley"]])
