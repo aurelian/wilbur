@@ -19,27 +19,40 @@
 
 (def app-state (r/atom {:posts [{:id 3 :title "Hello World"
                                  :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2"
-                                 :author "aurelian" :category "day2day"}
+                                 :author "lavinia" :category "day2day"}
                                 {:id 8 :title "Compile IT!"
                                  :body "### Save The Idea\nBecause this is something *else*."
-                                 :author "aurelian" :category "real life"}]}))
+                                 :author "wilbur" :category "real life"}]}))
+
+(def default-new-post
+  {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category ""})
 
 ;; ------------------------
 ;; Utils
 
+;; (defn find-post-by-id [post-id]
+;;   (r/atom (some #(if (= (js/parseInt post-id) (:id %)) %) (:posts @app-state))))
+
 (defn find-post-index [post-id]
   (some #(if (= (js/parseInt post-id) (:id %)) (.indexOf (:posts @app-state) %)) (:posts @app-state)))
 
-(defn find-post-cursor [post-id]
+(defn find-post [post-id]
   (r/cursor app-state [:posts (find-post-index post-id)]))
 
-(defn update-field [cursor field value]
- (swap! cursor assoc field value))
+(defn update-field [object field value]
+ (swap! object assoc field value))
+
+(defn next-post-id []
+  (inc (:id (last (:posts @app-state)))))
 
 ;; TODO: save it to backend
-(defn save-post [cursor id]
-  (println cursor)
+(defn save-post [post id]
   (secretary/dispatch! (post-path {:id id})))
+
+;; TODO: save it to backend
+(defn create-post [post]
+  (swap! app-state update :posts conj (merge @post {:id (next-post-id)}))
+  (secretary/dispatch! (root-path)))
 
 ;; ------------------------
 ;; Components
@@ -50,74 +63,81 @@
 (defn Html [text]
   [:section {:class "body" :dangerouslySetInnerHTML {:__html text}}])
 
-(defn InputText [cursor field value]
+(defn InputText [object field value]
   [:div.input-field
     [:input {:value value
-           :on-change #(update-field cursor field (.. % -target -value))}]])
+             :on-change #(update-field object field (.. % -target -value))}]])
 
-(defn TextArea [cursor field value]
+(defn TextArea [object field value]
   [:div.input-field
-    [:textarea {:value value
-                :rows 20 :cols 50
-                :on-change #(update-field cursor field (.. % -target -value))}]])
+    [:textarea {:value value :rows 20 :cols 50
+                :on-change #(update-field object field (.. % -target -value))}]])
 
-(defn PostForm [post-cursor]
-  (let [{:keys [id title body category]} @post-cursor]
+(defn PostForm [post is-new?]
+  (let [{:keys [id title body category]} @post]
     [:div.post-form
-     [InputText post-cursor :title title]
-     [TextArea post-cursor :body body]
+     [InputText post :title title]
+     [TextArea  post :body body]
+     [InputText post :category category]
      [:div
-      [:button {:on-click #(save-post post-cursor id)} "Save Post"]]]))
+      (if is-new?
+        [:button {:on-click #(create-post post)} "Create Post"]
+        [:button {:on-click #(save-post post id)} "Save Post"])]]))
 
-(defn Post [post-cursor editing]
-  (let [{:keys [id title body category]} @post-cursor]
-    [:article.post {:id (str "post-" id)}
-     [:h2.title [LinkTo (post-path {:id id}) title]]
+(defn PostTitle [post]
+  (let [{:keys [id title]} @post is-new? (nil? id)]
+    (if is-new?
+      [:h2.title [LinkTo "javascript:void(0)" title]]
+      [:h2.title [LinkTo (post-path {:id id}) title]])))
+
+(defn Post [post editing]
+  (let [{:keys [id title body category]} @post]
+    [:article.post
+     [PostTitle post]
      [Html (md/md->html body)]
      [:div
       [:p>em (str "#" category)]
       (if editing
-        [PostForm post-cursor]
+        [PostForm post (nil? id)]
         [LinkTo (edit-post-path {:id id}) "edit"])]]))
 
+;; (for [idx (range (count (:posts @app-state)))]
+;;    (let [post (r/cursor app-state [:posts idx])]
 (defn Posts []
-  [:div
-   (for [idx (range (count (:posts @app-state)))]
-      (let [post-cursor (r/cursor app-state [:posts idx])]
-          ^{:key idx} [Post post-cursor false]))])
+  [:div.posts
+   (for [post (sort-by :id > (:posts @app-state))]
+        (let [post-atm (r/atom post)]
+          ^{:key (:id post)} [Post post-atm false]))])
 
 ;; -------------------------
 ;; Views
 
 (defn layout [content]
   [:div.layout
-    [:header>h1 (LinkTo (root-path) "Wilbur Whateley")]
+    [:header>h1 [LinkTo (root-path) "Wilbur Whateley"]]
     [:div.content content]
     [:footer [:ul
               [:li (LinkTo (new-post-path) "new post")]
               [:li (LinkTo (about-path) "go to about page")]]]])
 
 (defn not-found-page [message]
-  [layout
-   [:div message]])
+  [layout [:div message]])
 
 (defn posts-page []
-  [layout
-   [Posts]])
+  [layout [Posts]])
 
 (defn post-page [post-id]
-  (if-let [post-cursor (find-post-cursor post-id)]
-    [layout [Post post-cursor]]
+  (if-let [post (find-post post-id)]
+    [layout [Post post]]
     [not-found-page (str "Post with id= '" post-id "` was not found")]))
 
 (defn edit-post-page [post-id]
-  (if-let [post-cursor (find-post-cursor post-id)]
-    [layout [Post post-cursor true]]
+  (if-let [post (find-post post-id)]
+    [layout [Post post true]]
     [not-found-page (str "Post with id= '" post-id "` was not found")]))
 
 (defn new-post-page []
-  [layout
-    [:div "New Post Page"]])
+  [layout [Post (r/atom default-new-post) true]])
 
 (defn about-page []
   [layout [:div "About Wilbur Whateley"]])
