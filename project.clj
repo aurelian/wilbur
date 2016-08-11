@@ -6,16 +6,18 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [ring-server "0.4.0"]
-                 [reagent "0.6.0-rc"]
-                 [reagent-forms "0.5.24"]
-                 [reagent-utils "0.1.8"]
                  [ring "1.5.0"]
                  [ring/ring-defaults "0.2.1"]
-                 [compojure "1.5.0"]
+                 [compojure "1.5.1"]
+                 [cheshire "5.6.3"]
                  [hiccup "1.0.5"]
                  [yogthos/config "0.8"]
                  [org.clojure/clojurescript "1.9.36"
                   :scope "provided"]
+                 [reagent "0.6.0-rc"]
+                 [reagent-forms "0.5.24"]
+                 [reagent-utils "0.1.8"]
+                 [cljs-ajax "0.5.8"]
                  [secretary "1.2.3"]
                  [markdown-clj "0.9.89"]
                  [venantius/accountant "0.1.7"

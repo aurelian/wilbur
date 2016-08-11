@@ -3,6 +3,7 @@
               [reagent.session :as session]
               [markdown.core :as md]
               [clojure.string :as str]
+              [ajax.core :refer [GET POST]]
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]))
 
@@ -17,15 +18,19 @@
 ;; ------------------------
 ;; App State
 
-(def app-state (r/atom {:posts [{:id 3 :title "Hello World"
-                                 :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2"
-                                 :author "lavinia" :category "day2day"}
-                                {:id 8 :title "Compile IT!"
-                                 :body "### Save The Idea\nBecause this is something *else*."
-                                 :author "wilbur" :category "real life"}]}))
+(def app-state (r/atom {:ready true :posts []}))
 
 (def default-new-post
   {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category ""})
+
+;; ------------------------
+;; Backend hooks. All right.
+
+(defn load-posts! [app-state]
+  (GET "/api/v1/posts.json"
+       {:handler (fn [data] (swap! app-state assoc :posts (:posts data)))
+        :error-handler (fn [details] (.warn js/console (str "Failed to fetch posts from the server: " details)))
+        :response-format :json, :keywords? true}))
 
 ;; ------------------------
 ;; Utils
@@ -183,4 +188,5 @@
      (fn [path]
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
+  (load-posts! app-state)
   (mount-root))
