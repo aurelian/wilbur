@@ -21,7 +21,7 @@
 (def app-state (r/atom {:ready true :posts []}))
 
 (def default-new-post
-  {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category ""})
+  {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category_name ""})
 
 ;; ------------------------
 ;; Backend hooks. All right.
@@ -79,11 +79,11 @@
                 :on-change #(update-field object field (.. % -target -value))}]])
 
 (defn PostForm [post is-new?]
-  (let [{:keys [id title body category]} @post]
+  (let [{:keys [id title body category_name]} @post]
     [:div.post-form
      [InputText post :title title]
      [TextArea  post :body body]
-     [InputText post :category category]
+     [InputText post :category_name category_name]
      [:div
       (if is-new?
         [:button {:on-click #(create-post post)} "Create Post"]
@@ -96,12 +96,12 @@
       [:h2.title [LinkTo (post-path {:id id}) title]])))
 
 (defn Post [post editing]
-  (let [{:keys [id title body category]} @post]
+  (let [{:keys [id title body category_name]} @post]
     [:article.post
      [PostTitle post]
      [Html (md/md->html body)]
      [:div
-      [:p>em (str "#" category)]
+      [:p>em (str "#" category_name)]
       (if editing
         [PostForm post (nil? id)]
         [LinkTo (edit-post-path {:id id}) "edit"])]]))

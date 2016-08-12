@@ -4,6 +4,7 @@
             [cheshire.core :as json]
             [hiccup.page :refer [include-js include-css html5]]
             [wilbur.middleware :refer [wrap-middleware]]
+            [wilbur.db :as db]
             [config.core :refer [env]]))
 
 (def mount-target
@@ -28,14 +29,6 @@
      mount-target
      (include-js "/js/app.js")]))
 
-(def posts
-  {:posts [{:id 3 :title "Hello World" 
-            :body "### Is the mic on?\nThis is a list with items:\n* Item 1\n* Item 2" 
-            :author "lavinia" :category "day2day"}
-           {:id 8 :title "Compile IT!"
-            :body "### Save The Idea\nBecause this is something *else*."
-            :author "wilbur" :category "real life"}]})
-
 (defn json-response [data]
   {:status  200
    :headers {"Content-Type" "application/json; charset=utf-8"}
@@ -43,7 +36,7 @@
 
 (defroutes routes
   (context "/api/v1" []
-    (GET "/posts.json" [] (json-response posts)))
+    (GET "/posts.json" [] (json-response {:posts (db/posts)})))
   (GET "*" [] loading-page)
   (resources "/")
   (not-found "Not Found"))

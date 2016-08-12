@@ -10,6 +10,9 @@
                  [ring/ring-defaults "0.2.1"]
                  [compojure "1.5.1"]
                  [cheshire "5.6.3"]
+                 [migratus "0.8.28"]
+                 [yesql "0.5.3"]
+                 [org.postgresql/postgresql "9.4-1201-jdbc41"]
                  [hiccup "1.0.5"]
                  [yogthos/config "0.8"]
                  [org.clojure/clojurescript "1.9.36"
@@ -23,13 +26,16 @@
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]]
 
-  :plugins [[lein-environ "1.0.2"]
-            [lein-cljsbuild "1.1.1"]
+  :plugins [[lein-environ "1.0.2"] ;;?
+            [migratus-lein "0.4.1"]
+            [lein-cljsbuild "1.1.3"]
             [lein-asset-minifier "0.2.7"
              :exclusions [org.clojure/clojure]]]
 
   :ring {:handler wilbur.handler/app
          :uberwar-name "wilbur.war"}
+
+  :migratus {:store :database}
 
   :min-lein-version "2.5.0"
 
@@ -67,12 +73,8 @@
               :source-map true
               :optimizations :none
               :pretty-print  true}}
-
-
-
             }
    }
-
 
   :figwheel
   {:http-server-root "public"
@@ -82,8 +84,6 @@
                       ]
    :css-dirs ["resources/public/css"]
    :ring-handler wilbur.handler/app}
-
-
 
   :profiles {:dev {:repl-options {:init-ns wilbur.repl}
 
@@ -121,7 +121,8 @@
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
 
-                   :env {:dev true}}
+                   :env {:dev true
+                         :database-url "jdbc:postgresql://localhost:5432/wilbur_development"}}
 
              :uberjar {:hooks [minify-assets.plugin/hooks]
                        :source-paths ["env/prod/clj"]
