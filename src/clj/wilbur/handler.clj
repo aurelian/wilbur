@@ -1,25 +1,21 @@
 (ns wilbur.handler
   (:require [compojure.core :refer [GET POST defroutes context routes wrap-routes]]
-            [cheshire.core :as json]
+            [ring.logger.timbre :as logger]
+            [ring.middleware.json :refer [wrap-json-response]]
+            [ring.util.response :refer [response]]
             [wilbur.middleware :refer [wrap-site-middleware wrap-api-middleware]]
             [wilbur.db :as db]
-            [wilbur.site :as site]
-
-            ))
-
-(defn json-response [data]
-  {:status  200
-   :headers {"Content-Type" "application/json; charset=utf-8"}
-   :body    (json/generate-string data)})
+            [wilbur.site :as site]))
 
 (defroutes api
-  (context "/api/v1" []
-           (POST "/posts.json" [] (json-response {:message "Hello World!"}))
-           (GET  "/posts.json" [] (json-response {:posts (db/posts)}))))
+    (context "/api/v1" []
+             (POST "/posts.json" [] (response {:message "Hello World!"}))
+             (GET  "/posts.json" [] (response {:posts (db/posts)}))))
 
 (def app
-  (routes (-> api
-              (wrap-routes wrap-api-middleware))
-          (-> site/site-routes
-              (wrap-routes wrap-site-middleware))))
+  (logger/wrap-with-logger
+    (routes (-> api
+                (wrap-routes wrap-json-response wrap-api-middleware))
+            (-> site/site-routes
+                (wrap-routes wrap-site-middleware)))))
 
