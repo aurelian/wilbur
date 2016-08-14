@@ -39,7 +39,8 @@
 ;;   (r/atom (some #(if (= (js/parseInt post-id) (:id %)) %) (:posts @app-state))))
 
 (defn find-post-index [post-id]
-  (some #(if (= (js/parseInt post-id) (:id %)) (.indexOf (:posts @app-state) %)) (:posts @app-state)))
+  (some #(if (= (js/parseInt post-id) (:id %)) (.indexOf (:posts @app-state) %))
+        (:posts @app-state)))
 
 (defn find-post [post-id]
   (r/cursor app-state [:posts (find-post-index post-id)]))
@@ -56,6 +57,10 @@
 
 ;; TODO: save it to backend
 (defn create-post [post]
+  (POST "/api/v1/posts.json" {:params (dissoc @post :id)
+                              :handler (fn [data] (.log js/console data))
+                              :error-handler (fn [details] (.warn js/console (str "Failed to fetch posts from the server: " details)))})
+
   (swap! app-state update :posts conj (merge @post {:id (next-post-id)}))
   (secretary/dispatch! (root-path)))
 
