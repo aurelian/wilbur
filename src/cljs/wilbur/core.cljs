@@ -26,11 +26,14 @@
 ;; ------------------------
 ;; Backend hooks. All right.
 
+(defn error-handler [details]
+  (.warn js/console (str "Failed to fetch posts from the server: " details)))
+
 (defn load-posts! [app-state]
   (GET "/api/v1/posts.json"
        {:handler (fn [data] (swap! app-state assoc :posts (:posts data)))
-        :error-handler (fn [details] (.warn js/console (str "Failed to fetch posts from the server: " details)))
-        :response-format :json, :keywords? true}))
+        :error-handler error-handler
+        :response-format :json :keywords? true}))
 
 ;; ------------------------
 ;; Utils
@@ -57,12 +60,14 @@
 
 ;; TODO: save it to backend
 (defn create-post [post]
-  (POST "/api/v1/posts.json" {:params (dissoc @post :id)
-                              :handler (fn [data] (.log js/console data))
-                              :error-handler (fn [details] (.warn js/console (str "Failed to fetch posts from the server: " details)))})
-
-  (swap! app-state update :posts conj (merge @post {:id (next-post-id)}))
-  (secretary/dispatch! (root-path)))
+  (POST "/api/v1/posts.json" {:format :json
+                              :response-format :json :keywords? true
+                              :params {:post (dissoc @post :id)} ;; {:post {:title "Hello" :body "Body" :category_name "le category"}
+                              :handler (fn [post]
+                                         (.log js/console post)
+                                         (swap! app-state update :posts conj post)
+                                         (secretary/dispatch! (root-path)))
+                              :error-handler error-handler}))
 
 ;; ------------------------
 ;; Components

@@ -20,6 +20,13 @@
     found
     (create-user<! user)))
 
+;; TODO: pass user
+(defn create-post! [{:keys [category_name title body]}]
+  (let [category (find-or-create-category {:name category_name})
+        user (find-or-create-user {:name "lavinia"})]
+    (merge {:category_name category_name :user_name (:name user)}
+      (create-post<! {:title title, :body body :category_id (:id category), :user_id (:id user)}))))
+
 ;; ----------------------
 ;; -- low level stuff.
 (defn migrate-all-things! []
@@ -42,6 +49,9 @@
 
 (comment
   (create-default-data!)
+  (users)
+  (categories)
+  (posts)
   (map :title (posts))
   (find-category {:name "mapping"} {:result-set-fn first}))
 

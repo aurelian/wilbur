@@ -11,7 +11,6 @@
                  [ring/ring-json "0.4.0"]
                  [ring-logger-timbre "0.7.5"]
                  [compojure "1.5.1"]
-                 ;;[cheshire "5.6.3"]
                  [migratus "0.8.28"]
                  [yesql "0.5.3"]
                  [org.postgresql/postgresql "9.4-1201-jdbc41"]
