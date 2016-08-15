@@ -17,6 +17,16 @@ where p.id = :id
 offset 0
 limit 1
 
+-- name: update-post!
+-- Updates post
+update posts
+set title = :title,
+body = :body,
+category_id = :category_id,
+user_id = :user_id,
+updated_at = now()
+where id = :id
+
 -- name: create-post<!
 -- Adds a new post
 insert into posts (title, body, category_id, user_id) values (:title, :body, :category_id, :user_id)

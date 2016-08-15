@@ -12,14 +12,15 @@
     (response post)))
 
 (defn update-post! [id post]
-
-  (println (str "--> [" id "]=>" post " <--"))
-  (response post)
-
-  )
+  (let [db-post (db/find-post {:id id} {:result-set-fn first})]
+    (db/update-post! (merge db-post post))
+    (response (merge db-post post))))
 
 (comment
-  (create-post! {:body {:post {:title "Hi" :category_name "day2day" :body "It's a **jungle** out there!"}}}))
+  (create-post! {:body {:post {:title "Hi" :category_name "day2day" :body "It's a **jungle** out there!"}}})
+  (update-post! 8, {:title "O Hai¡"})
+  (db/find-post {:id 8} {:result-set-fn first})
+  )
 
 (defroutes api
     (context "/api/v1" []
