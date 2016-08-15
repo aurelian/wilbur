@@ -27,6 +27,14 @@
     (merge {:category_name category_name :user_name (:name user)}
       (create-post<! {:title title, :body body :category_id (:id category), :user_id (:id user)}))))
 
+(defn n-update-post! [new-post]
+  (let [existing-post (find-post {:id (:id new-post)} {:result-set-fn first})
+        category (find-or-create-category {:name (:category_name new-post)})
+        updated-post (merge existing-post (merge new-post {:category_id (:id category)}))]
+    (println updated-post)
+    (if (= 1 (update-post! updated-post))
+      updated-post)))
+
 ;; ----------------------
 ;; -- low level stuff.
 (defn migrate-all-things! []

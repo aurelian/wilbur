@@ -15,6 +15,14 @@
 (declare new-post-path)
 (declare about-path)
 
+;; GET/POST
+(defn api-posts-path []
+  "/api/v1/posts.json")
+
+;; PATCH/DELETE
+(defn api-post-path [post-id]
+  (str "/api/v1/posts/" post-id ".json"))
+
 ;; ------------------------
 ;; App State
 
@@ -30,7 +38,7 @@
   (.warn js/console (str "Failed to fetch posts from the server: " details)))
 
 (defn load-posts! [app-state]
-  (GET "/api/v1/posts.json"
+  (GET (api-posts-path)
        {:handler (fn [data] (swap! app-state assoc :posts (:posts data)))
         :error-handler error-handler
         :response-format :json :keywords? true}))
@@ -55,8 +63,14 @@
   (inc (:id (last (:posts @app-state)))))
 
 ;; TODO: save it to backend
-(defn save-post [post id]
-  (secretary/dispatch! (post-path {:id id})))
+(defn save-post [post]
+  (PATCH (api-posts-path (:id post))
+         {:format :json
+          :response-format :json :keywords? true
+          :params {:post @post} ;; {:post {:id 5 :title "Hello" :body "Body" :category_name "le category"}
+          :handler (fn [post]
+                     (secretary/dispatch! (post-path {:id (:id post)})))
+          :error-handler error-handler}))
 
 ;; TODO: save it to backend
 (defn create-post [post]
@@ -96,7 +110,7 @@
      [:div
       (if is-new?
         [:button {:on-click #(create-post post)} "Create Post"]
-        [:button {:on-click #(save-post post id)} "Save Post"])]]))
+        [:button {:on-click #(save-post post)} "Save Post"])]]))
 
 (defn PostTitle [post]
   (let [{:keys [id title]} @post is-new? (nil? id)]

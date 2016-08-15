@@ -11,14 +11,13 @@
   (let [post (db/create-post! (:post body))]
     (response post)))
 
-(defn update-post! [id post]
-  (let [db-post (db/find-post {:id id} {:result-set-fn first})]
-    (db/update-post! (merge db-post post))
-    (response (merge db-post post))))
+(defn update-post! [{:keys [body]}]
+  (let [post (db/n-update-post! (:post body))]
+    (response post)))
 
 (comment
   (create-post! {:body {:post {:title "Hi" :category_name "day2day" :body "It's a **jungle** out there!"}}})
-  (update-post! 8, {:title "O Hai¡"})
+  (update-post! {:body {:post {:id 8 :title "Hello Horse" :category_name "goats"}}})
   (db/find-post {:id 8} {:result-set-fn first})
   )
 
@@ -26,7 +25,7 @@
     (context "/api/v1" []
              (POST  "/posts.json" request (create-post! request))
              (PATCH "/posts/:id{[0-9]+}.json" [id :<< Integer/parseInt
-                                               :as {body :body}] (update-post! id (:post body)))
+                                               :as {body :body}] (update-post! body))
              (GET   "/posts.json" [] (response {:posts (db/posts)}))))
 
 (def app
