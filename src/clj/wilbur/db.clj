@@ -48,6 +48,7 @@
                        :category_id (:id cat2), :user_id (:id wilbur)})))
 
 (comment
+  (truncate-all-things!)
   (create-default-data!)
   (users)
   (categories)

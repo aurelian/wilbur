@@ -1,5 +1,5 @@
 (ns wilbur.handler
-  (:require [compojure.core :refer [GET POST defroutes context routes wrap-routes]]
+  (:require [compojure.core :refer [GET POST PATCH defroutes context routes wrap-routes]]
             [ring.logger.timbre :as logger]
             [ring.middleware.json :refer [wrap-json-body wrap-json-params wrap-json-response]]
             [ring.util.response :refer [response]]
@@ -11,13 +11,22 @@
   (let [post (db/create-post! (:post body))]
     (response post)))
 
+(defn update-post! [id post]
+
+  (println (str "--> [" id "]=>" post " <--"))
+  (response post)
+
+  )
+
 (comment
   (create-post! {:body {:post {:title "Hi" :category_name "day2day" :body "It's a **jungle** out there!"}}}))
 
 (defroutes api
     (context "/api/v1" []
-             (POST "/posts.json" request (create-post! request))
-             (GET  "/posts.json" [] (response {:posts (db/posts)}))))
+             (POST  "/posts.json" request (create-post! request))
+             (PATCH "/posts/:id{[0-9]+}.json" [id :<< Integer/parseInt
+                                               :as {body :body}] (update-post! id (:post body)))
+             (GET   "/posts.json" [] (response {:posts (db/posts)}))))
 
 (def app
   (logger/wrap-with-logger

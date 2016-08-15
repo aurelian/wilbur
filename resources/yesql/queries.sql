@@ -6,6 +6,17 @@ from posts p
 left join categories c on c.id = p.category_id
 left join users u on u.id = p.user_id
 
+-- name: find-post
+-- Finds a post by id
+select p.id, p.created_at, p.updated_at, p.title, p.body,
+c.id as category_id, c.name as category_name, u.id as user_id, u.name as user_name
+from posts p
+left join categories c on c.id = p.category_id
+left join users u on u.id = p.user_id
+where p.id = :id
+offset 0
+limit 1
+
 -- name: create-post<!
 -- Adds a new post
 insert into posts (title, body, category_id, user_id) values (:title, :body, :category_id, :user_id)

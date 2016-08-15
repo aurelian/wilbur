@@ -64,7 +64,6 @@
                               :response-format :json :keywords? true
                               :params {:post (dissoc @post :id)} ;; {:post {:title "Hello" :body "Body" :category_name "le category"}
                               :handler (fn [post]
-                                         (.log js/console post)
                                          (swap! app-state update :posts conj post)
                                          (secretary/dispatch! (root-path)))
                               :error-handler error-handler}))
