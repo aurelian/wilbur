@@ -7,7 +7,7 @@ left join categories c on c.id = p.category_id
 left join users u on u.id = p.user_id
 
 -- name: find-post
--- Finds a post by id
+-- Finds a post by id with categories and users included
 select p.id, p.created_at, p.updated_at, p.title, p.body,
 c.id as category_id, c.name as category_name, u.id as user_id, u.name as user_name
 from posts p
@@ -18,7 +18,7 @@ offset 0
 limit 1
 
 -- name: update-post!
--- Updates post
+-- Updates post with given id
 update posts
 set title = :title,
 body = :body,
@@ -26,6 +26,10 @@ category_id = :category_id,
 user_id = :user_id,
 updated_at = now()
 where id = :id
+
+-- name: delete-post!
+-- Deletes the post with given id
+delete from posts where id = :id
 
 -- name: create-post<!
 -- Adds a new post

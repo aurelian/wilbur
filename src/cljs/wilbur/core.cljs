@@ -3,7 +3,7 @@
               [reagent.session :as session]
               [markdown.core :as md]
               [clojure.string :as str]
-              [ajax.core :refer [GET POST]]
+              [ajax.core :refer [GET POST PATCH DELETE]]
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]))
 
@@ -64,7 +64,7 @@
 
 ;; TODO: save it to backend
 (defn save-post [post]
-  (PATCH (api-posts-path (:id post))
+  (PATCH (api-post-path (:id @post))
          {:format :json
           :response-format :json :keywords? true
           :params {:post @post} ;; {:post {:id 5 :title "Hello" :body "Body" :category_name "le category"}
@@ -74,18 +74,27 @@
 
 ;; TODO: save it to backend
 (defn create-post [post]
-  (POST "/api/v1/posts.json" {:format :json
-                              :response-format :json :keywords? true
-                              :params {:post (dissoc @post :id)} ;; {:post {:title "Hello" :body "Body" :category_name "le category"}
-                              :handler (fn [post]
-                                         (swap! app-state update :posts conj post)
-                                         (secretary/dispatch! (root-path)))
-                              :error-handler error-handler}))
+  (POST (api-posts-path)
+        {:format :json
+         :response-format :json :keywords? true
+         :params {:post (dissoc @post :id)} ;; {:post {:title "Hello" :body "Body" :category_name "le category"}
+         :handler (fn [post]
+                    (swap! app-state update :posts conj post)
+                    (secretary/dispatch! (root-path)))
+         :error-handler error-handler}))
 
+(defn delete-post [post]
+  (DELETE (api-post-path (:id @post))
+          {:format :json
+           :response-format :json :keywwords? true
+           :handler (fn [response]
+                      )
+           :error-handler error-handler}
+  ))
 ;; ------------------------
 ;; Components
 
-(defn LinkTo [path text];; & attributes]
+(defn LinkTo [path text & attributes]
   [:a {:href path} text])
 
 (defn Html [text]
@@ -127,7 +136,10 @@
       [:p>em (str "#" category_name)]
       (if editing
         [PostForm post (nil? id)]
-        [LinkTo (edit-post-path {:id id}) "edit"])]]))
+        [LinkTo (edit-post-path {:id id}) "edit"])
+      [:p "--"]
+      [:a {:href "javascript:void(0)" :on-click #(delete-post post)} "delete"]
+      ]]))
 
 ;; (for [idx (range (count (:posts @app-state)))]
 ;;    (let [post (r/cursor app-state [:posts idx])]
