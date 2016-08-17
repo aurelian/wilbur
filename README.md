@@ -44,4 +44,3 @@ Run migrations from clojure:
 ### Stuff
 
  * [component-level-state](https://github.com/reagent-project/reagent-cookbook/tree/master/basics/component-level-state)
-

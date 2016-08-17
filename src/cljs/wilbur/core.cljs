@@ -15,33 +15,12 @@
 (declare new-post-path)
 (declare about-path)
 
-;; GET/POST
-(defn api-posts-path []
-  "/api/v1/posts.json")
-
-;; PATCH/DELETE
-(defn api-post-path [post-id]
-  (str "/api/v1/posts/" post-id ".json"))
-
 ;; ------------------------
 ;; App State
-
 (def app-state (r/atom {:ready true :posts []}))
 
 (def default-new-post
   {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category_name ""})
-
-;; ------------------------
-;; Backend hooks. All right.
-
-(defn error-handler [details]
-  (.warn js/console (str "Failed to fetch posts from the server: " details)))
-
-(defn load-posts! [app-state]
-  (GET (api-posts-path)
-       {:handler (fn [data] (swap! app-state assoc :posts (:posts data)))
-        :error-handler error-handler
-        :response-format :json :keywords? true}))
 
 ;; ------------------------
 ;; Utils
@@ -59,10 +38,26 @@
 (defn update-field [object field value]
  (swap! object assoc field value))
 
-(defn next-post-id []
-  (inc (:id (last (:posts @app-state)))))
+;; ------------------------
+;; Backend hooks. All right.
 
-;; TODO: save it to backend
+;; GET/POST
+(defn api-posts-path []
+  "/api/v1/posts.json")
+
+;; PATCH/DELETE
+(defn api-post-path [post-id]
+  (str "/api/v1/posts/" post-id ".json"))
+
+(defn error-handler [details]
+  (.warn js/console (str "Failed to fetch posts from the server: " details)))
+
+(defn load-posts! [app-state]
+  (GET (api-posts-path)
+       {:handler (fn [posts] (swap! app-state assoc :posts (:posts posts)))
+        :error-handler error-handler
+        :response-format :json :keywords? true}))
+
 (defn save-post [post]
   (PATCH (api-post-path (:id @post))
          {:format :json
@@ -72,7 +67,6 @@
                      (secretary/dispatch! (post-path {:id (:id post)})))
           :error-handler error-handler}))
 
-;; TODO: save it to backend
 (defn create-post [post]
   (POST (api-posts-path)
         {:format :json
@@ -87,8 +81,10 @@
   (DELETE (api-post-path (:id @post))
           {:format :json
            :response-format :json :keywwords? true
-           :handler (fn [response]
-                      )
+           :handler (fn [_]
+                        (swap! app-state update-in [:posts]
+                               (fn [posts] (vec (remove #(= (:id @post) (:id %)) posts))))
+                        (secretary/dispatch! (root-path)))
            :error-handler error-handler}
   ))
 ;; ------------------------
@@ -121,6 +117,13 @@
         [:button {:on-click #(create-post post)} "Create Post"]
         [:button {:on-click #(save-post post)} "Save Post"])]]))
 
+(defn PostActions [post is-new?]
+  (let [{:keys [id]} @post]
+    [:div.actions
+     [LinkTo (edit-post-path {:id id}) "edit"]
+     (if-not is-new?
+       [:span "--" [:a {:href "javascript:void(0)" :on-click #(delete-post post)} "delete"]])]))
+
 (defn PostTitle [post]
   (let [{:keys [id title]} @post is-new? (nil? id)]
     (if is-new?
@@ -136,10 +139,7 @@
       [:p>em (str "#" category_name)]
       (if editing
         [PostForm post (nil? id)]
-        [LinkTo (edit-post-path {:id id}) "edit"])
-      [:p "--"]
-      [:a {:href "javascript:void(0)" :on-click #(delete-post post)} "delete"]
-      ]]))
+        [PostActions post (nil? id)])]]))
 
 ;; (for [idx (range (count (:posts @app-state)))]
 ;;    (let [post (r/cursor app-state [:posts idx])]
@@ -154,7 +154,7 @@
 
 (defn layout [content]
   [:div.layout
-    [:header>h1 [LinkTo (root-path) "Wilbur Whateley"]]
+    [:header>h1 [LinkTo (root-path) "Wilbur"]]
     [:div.content content]
     [:footer [:ul
               [:li (LinkTo (new-post-path) "new post")]
