@@ -20,7 +20,7 @@ clojurescript with [reagent](http://reagent-project.github.io/) on frontend.
 
 AFAIR this project was generated using [reagent template](https://github.com/reagent-project/reagent-template).
 
-### Database
+### Toolbox
 
  * [Postgresql](https://www.postgresql.org/docs/9.5/static/index.html)
 
@@ -42,6 +42,16 @@ Run migrations from clojure:
  * [yesql](https://github.com/krisajenkins/yesql) / [clojars](https://clojars.org/yesql)
 
  * [buddy-auth](https://funcool.github.io/buddy-auth/latest) / [clojars](https://clojars.org/buddy/buddy-auth)
+
+ * Logs with [timbre](https://github.com/ptaoussanis/timbre).
+
+Exclude all calls from code bellow warn level:
+
+```bash
+export TIMBRE_LEVEL=':warn'
+lein cljsbuild once
+lein uberjar
+```
 
 ### Stuff
 
