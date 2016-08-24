@@ -1,6 +1,5 @@
 (ns wilbur.handler
   (:require [compojure.core :refer [GET POST PATCH DELETE defroutes context routes wrap-routes]]
-            [ring.logger.timbre :as logger]
             [ring.middleware.json :refer [wrap-json-body wrap-json-params wrap-json-response]]
             [ring.util.response :as r :refer [response status header]]
             [wilbur.middleware :refer [wrap-site-middleware wrap-api-middleware]]
@@ -53,11 +52,10 @@
              (GET    "/posts.json" [] (response {:posts (db/posts)}))))
 
 (def app
-  (logger/wrap-with-logger
     (routes (-> api
                 (wrap-json-response)
                 (wrap-json-body {:keywords? true})
                 (wrap-routes wrap-api-middleware))
             (-> site/site-routes
-                (wrap-routes wrap-site-middleware)))))
+                (wrap-routes wrap-site-middleware))))
 
