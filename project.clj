@@ -10,6 +10,7 @@
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-json "0.4.0"]
                  [ring-logger-timbre "0.7.5"]
+                 [buddy/buddy-auth "1.1.0"]
                  [compojure "1.5.1"]
                  [migratus "0.8.28"]
                  [yesql "0.5.3"]

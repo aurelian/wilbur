@@ -26,7 +26,7 @@ AFAIR this project was generated using [reagent template](https://github.com/rea
 
 ```createdb wilbur_development```
 
- * [Migratus](https://github.com/yogthos/migratus) [clojars](https://clojars.org/migratus)
+ * [Migratus](https://github.com/yogthos/migratus) / [clojars](https://clojars.org/migratus)
 
 Run migrations from clojure:
 
@@ -39,7 +39,9 @@ Run migrations from clojure:
 
 `lein migratus create do-stuff` creates a new migration
 
- * [yesql](https://github.com/krisajenkins/yesql) [clojars](https://clojars.org/yesql)
+ * [yesql](https://github.com/krisajenkins/yesql) / [clojars](https://clojars.org/yesql)
+
+ * [buddy-auth](https://funcool.github.io/buddy-auth/latest) / [clojars](https://clojars.org/buddy/buddy-auth)
 
 ### Stuff
 
