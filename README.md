@@ -1,4 +1,4 @@
-## Wilbur
+# Wilbur
 
 > Iré a esos polos cuando la Tierra esté despejada, si no puedo comprender
 > la fórmula Dho-Hna cuando la memorice.
@@ -51,6 +51,14 @@ Exclude all calls from code bellow warn level:
 export TIMBRE_LEVEL=':warn'
 lein cljsbuild once
 lein uberjar
+```
+
+### API
+
+```bash
+curl -v -H "Content-Type: application/json" -H "Authorization: Token eyJh.." -X PATCH http://localhost:3000/api/v1/posts/1.json -d '{"post": {"title": "Hello"}}'
+curl -v -H "Content-Type: application/json" -X POST  http://localhost:3000/api/v1/login.json   -d '{"username": "admin", "password": "secrez"}'
+
 ```
 
 ### Stuff

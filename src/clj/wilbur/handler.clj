@@ -4,6 +4,8 @@
     [clj-time.core :as time]
     [buddy.auth.backends.token :refer [jws-backend]]
     [buddy.auth.middleware :refer [wrap-authorization wrap-authentication]]
+    [buddy.auth.accessrules :refer [wrap-access-rules success error]]
+    [buddy.auth :refer [authenticated?]]
     [buddy.sign.jwt :as jwt]
     [ring.middleware.json :refer [wrap-json-body wrap-json-params wrap-json-response]]
     [wilbur.db :as db]
@@ -52,6 +54,24 @@
         (http/ok {:token token}))
       (http/bad-request {:message "wrong auth data"}))))
 
+(defn any-user [request]
+  (success))
+
+(defn logged-user [request]
+  (if (authenticated? request)
+    true
+    (error {:message "Auth required."})))
+
+(defn on-error [request body]
+    (http/forbidden body))
+
+(def rules
+  [{:uri "/api/v1/login.json" :handler any-user}
+   {:patern #"^/api/v1/posts.*.json$"
+    :request-method '(:post :patch :delete)
+    :handler logged-user}])
+
+
 (defroutes api
     (context "/api/v1" []
              (POST   "/login.json" {body :body} (login! body))
@@ -62,6 +82,7 @@
 
 (def app
     (routes (-> api
+                (wrap-access-rules {:rules rules :on-error on-error})
                 (wrap-authorization auth-backend)
                 (wrap-authentication auth-backend)
                 (wrap-json-response)

@@ -9,6 +9,9 @@
 (defn bad-request [body]
   (r/status (r/response body) 400))
 
+(defn forbidden [body]
+  (r/status (r/response body) 403))
+
 (defn created [body location]
   (->
     (r/response body)

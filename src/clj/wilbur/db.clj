@@ -11,9 +11,13 @@
 ;; ----------------------
 ;; -- high level stuff.
 (defn find-or-create-category [{:keys [name] :as category}]
-  (if-let [found (find-category {:name name} {:result-set-fn first})]
-    found
-    (create-category<! category)))
+  (if-not (nil? name)
+    (if-let [found (find-category {:name name} {:result-set-fn first})]
+      found
+      (create-category<! category))))
+
+(comment
+  (find-or-create-category {:name nil}))
 
 (defn find-or-create-user [{:keys [name] :as user}]
   (if-let [found (find-user {:name name} {:result-set-fn first})]
@@ -32,10 +36,16 @@
   (let [existing-post (find-post {:id id} {:result-set-fn first})
         category      (find-or-create-category {:name category_name})
         user          (find-or-create-user {:name "lavinia"})
-        updated-post  (merge existing-post
-                             (merge new-post {:user_id (:id user) :category_id (:id category)}))]
+        ;; removes nils so won't accidentally
+        dependencies  (into {} (filter second {:user_id (:id user) :category_id (:id category)}))
+        updated-post  (merge existing-post (merge new-post dependencies))]
     (if (= 1 (update-post! updated-post))
       updated-post)))
+
+(comment
+  (find-post {:id 9})
+  (wrap-update-post! {:id 9 :title "Dystopia"}))
+
 
 (defn wrap-delete-post! [id]
   (delete-post! {:id (Integer/parseInt id)}))
