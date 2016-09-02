@@ -1,13 +1,15 @@
 (ns wilbur.handler
   (:require
     [compojure.core :refer [GET POST PATCH DELETE defroutes context routes wrap-routes]]
+    [compojure.route :as route]
+
     [clj-time.core :as time]
     [buddy.auth.backends.token :refer [jws-backend]]
     [buddy.auth.middleware :refer [wrap-authorization wrap-authentication]]
     [buddy.auth.accessrules :refer [wrap-access-rules success error]]
     [buddy.auth :refer [authenticated?]]
     [buddy.sign.jwt :as jwt]
-    [ring.middleware.json :refer [wrap-json-body wrap-json-params wrap-json-response]]
+
     [wilbur.db :as db]
     [wilbur.site :as site]
     [wilbur.helpers.http :as http]
@@ -67,12 +69,11 @@
 
 (def rules
   [{:uri "/api/v1/login.json" :handler any-user}
-   {:patern #"^/api/v1/posts.*.json$"
-    :request-method '(:post :patch :delete)
+   {:pattern #"^\/api\/v1\/posts.*\.json$"
+    :request-method #{:post :patch :delete}
     :handler logged-user}])
 
-
-(defroutes api
+(defroutes api-routes
     (context "/api/v1" []
              (POST   "/login.json" {body :body} (login! body))
              (POST   "/posts.json" {body :body} (create-post! body))
@@ -81,14 +82,12 @@
              (GET    "/posts.json" [] (http/ok {:posts (db/posts)}))))
 
 (def app
-    (routes (-> api
+    (routes (-> site/site-routes
+                (wrap-site-middleware))
+            (-> api-routes
                 (wrap-access-rules {:rules rules :on-error on-error})
                 (wrap-authorization auth-backend)
                 (wrap-authentication auth-backend)
-                (wrap-json-response)
-                (wrap-json-body {:keywords? true :bigdecimals? true})
-                (wrap-routes wrap-api-middleware)
-                )
-            (-> site/site-routes
-                (wrap-routes wrap-site-middleware))))
+                (wrap-api-middleware))
+            (route/not-found "Not Found")))
 

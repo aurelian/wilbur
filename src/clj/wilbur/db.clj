@@ -46,7 +46,6 @@
   (find-post {:id 9})
   (wrap-update-post! {:id 9 :title "Dystopia"}))
 
-
 (defn wrap-delete-post! [id]
   (delete-post! {:id (Integer/parseInt id)}))
 

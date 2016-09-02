@@ -2,7 +2,7 @@
   (:require [config.core :refer [env]]
             [hiccup.page :refer [include-js include-css html5]]
             [compojure.core :refer [GET defroutes]]
-            [compojure.route :refer [not-found resources]]))
+            [compojure.route :refer [resources]]))
 
 (def mount-target
   [:div#app
@@ -28,7 +28,6 @@
      (include-js "/js/app.js")]))
 
 (defroutes site-routes
-  (GET "*" [] loading-page)
-  (resources "/")
-  (not-found "Not Found"))
+  (GET "/" [] loading-page)
+  (resources "/"))
 
