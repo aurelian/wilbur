@@ -82,12 +82,12 @@
              (GET    "/posts.json" [] (http/ok {:posts (db/posts)}))))
 
 (def app
-    (routes (-> site/site-routes
-                (wrap-site-middleware))
-            (-> api-routes
+    (routes (-> api-routes
                 (wrap-access-rules {:rules rules :on-error on-error})
                 (wrap-authorization auth-backend)
                 (wrap-authentication auth-backend)
                 (wrap-api-middleware))
+            (-> site/site-routes
+                (wrap-site-middleware))
             (route/not-found "Not Found")))
 
