@@ -13,6 +13,7 @@
 (declare post-path)
 (declare edit-post-path)
 (declare new-post-path)
+(declare login-path)
 (declare about-path)
 
 ;; ------------------------
@@ -85,10 +86,10 @@
                         (swap! app-state update-in [:posts]
                                (fn [posts] (vec (remove #(= (:id @post) (:id %)) posts))))
                         (secretary/dispatch! (root-path)))
-           :error-handler error-handler}
-  ))
+           :error-handler error-handler}))
+
 ;; ------------------------
-;; Components
+;; Utility Components
 
 (defn LinkTo [path text & attributes]
   [:a {:href path} text])
@@ -105,6 +106,9 @@
   [:div.input-field
     [:textarea {:value value :rows 20 :cols 50
                 :on-change #(update-field object field (.. % -target -value))}]])
+
+;; ------------------------
+;; Main Components
 
 (defn PostForm [post is-new?]
   (let [{:keys [id title body category_name]} @post]
@@ -141,8 +145,6 @@
         [PostForm post (nil? id)]
         [PostActions post (nil? id)])]]))
 
-;; (for [idx (range (count (:posts @app-state)))]
-;;    (let [post (r/cursor app-state [:posts idx])]
 (defn Posts []
   [:div.posts
    (for [post (sort-by :id > (:posts @app-state))]
@@ -158,6 +160,7 @@
     [:div.content content]
     [:footer [:ul
               [:li (LinkTo (new-post-path) "new post")]
+              [:li (LinkTo (login-path) "login")]
               [:li (LinkTo (about-path) "go to about page")]]]])
 
 (defn not-found-page [message]
@@ -180,7 +183,10 @@
   [layout [Post (r/atom default-new-post) true]])
 
 (defn about-page []
-  [layout [:div "About Wilbur Whateley"]])
+  [layout [:div "About Wilbur"]])
+
+(defn login-page []
+  [layout [:div "Login"]])
 
 (defn current-page []
   [:div [(session/get :current-page)]])
@@ -204,6 +210,9 @@
 
 (secretary/defroute about-path "/about" []
   (session/put! :current-page #'about-page))
+
+(secretary/defroute login-path "/login" []
+  (session/put! :current-page #'login-page))
 
 (secretary/defroute "*" []
  (session/put! :current-page #(not-found-page "Page was not found")))
