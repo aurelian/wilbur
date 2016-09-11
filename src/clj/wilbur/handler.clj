@@ -53,8 +53,8 @@
       (let [claims {:user (keyword username)
                     :exp (time/plus (time/now) (time/seconds 3600))}
             token (jwt/sign claims secret {:alg :hs512})]
-        (http/ok {:token token}))
-      (http/bad-request {:message "wrong auth data"}))))
+        (http/ok {:token token :username username}))
+      (http/bad-request {:error "Username or password is incorrect"}))))
 
 (defn any-user [request]
   (success))

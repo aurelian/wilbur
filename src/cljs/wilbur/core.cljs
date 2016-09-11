@@ -1,11 +1,11 @@
 (ns wilbur.core
-    (:require [reagent.core :as r]
-              [reagent.session :as session]
-              [markdown.core :as md]
-              [clojure.string :as str]
-              [ajax.core :refer [GET POST PATCH DELETE]]
-              [secretary.core :as secretary :include-macros true]
-              [accountant.core :as accountant]))
+  (:require [reagent.core :as r]
+            [reagent.session :as session]
+            [markdown.core :as md]
+            [clojure.string :as str]
+            [ajax.core :refer [GET POST PATCH DELETE]]
+            [secretary.core :as secretary :include-macros true]
+            [accountant.core :as accountant]))
 
 ;; ------------------------
 ;; Forward Declaration of routes
@@ -18,7 +18,7 @@
 
 ;; ------------------------
 ;; App State
-(def app-state (r/atom {:ready true :posts []}))
+(def app-state (r/atom {:current-user nil :ready true :posts []}))
 
 (def credentials (r/atom {:username nil :password nil}))
 
@@ -51,6 +51,9 @@
 ;; PATCH/DELETE
 (defn api-post-path [post-id]
   (str "/api/v1/posts/" post-id ".json"))
+
+(defn api-login-path []
+  "/api/v1/login.json")
 
 (defn error-handler [details]
   (.warn js/console (str "Failed to fetch posts from the server: " details)))
@@ -89,6 +92,18 @@
                                (fn [posts] (vec (remove #(= (:id @post) (:id %)) posts))))
                         (secretary/dispatch! (root-path)))
            :error-handler error-handler}))
+
+(defn login! [username password error]
+  (POST (api-login-path)
+        {:format :json
+         :response-format :json :keywords? true
+         :params {:username username :password password}
+         :handler (fn [response]
+
+                    (println response)
+
+                    )
+         :error-handler #(reset! error (get-in % [:response :error]))}))
 
 ;; ------------------------
 ;; Utility Components
@@ -187,22 +202,25 @@
 (defn about-page []
   [layout [:div.about-page [:h2 "About Wilbur"]]])
 
-(defn login! [user pass]
-  (println (str "user=" user "|pass=" pass ".")))
-
 (defn login-page [credentials]
-  (let [{:keys [username password]} @credentials]
+  (let [{:keys [username password]} @credentials
+        error (r/atom nil)]
     (fn []
       [layout
        [:div.login-page
         [:h2 "Login"]
         [:div.input-field
          [:input {:type "text"
+                  :placeholder "username"
                   :on-change #(swap! credentials assoc :username (-> % .-target .-value))}]]
         [:div.input-field
          [:input {:type "password"
+                  :placeholder "password"
                   :on-change #(swap! credentials assoc :password (-> % .-target .-value))}]]
-        [:button {:on-click #(login! (:username @credentials) (:password @credentials))} "login"]]])))
+        (when-let [error @error]
+          [:p.error error])
+        [:button {:on-click #(login! (:username @credentials) (:password @credentials) error)} 
+         "login"]]])))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
