@@ -20,6 +20,8 @@
 ;; App State
 (def app-state (r/atom {:ready true :posts []}))
 
+(def credentials (r/atom {:username nil :password nil}))
+
 (def default-new-post
   {:id nil :title "New Horror Post" :body "Some *markdown* to your ❤️ 's desire" :author "wilbur" :category_name ""})
 
@@ -59,7 +61,7 @@
         :error-handler error-handler
         :response-format :json :keywords? true}))
 
-(defn save-post [post]
+(defn save-post! [post]
   (PATCH (api-post-path (:id @post))
          {:format :json
           :response-format :json :keywords? true
@@ -68,7 +70,7 @@
                      (secretary/dispatch! (post-path {:id (:id post)})))
           :error-handler error-handler}))
 
-(defn create-post [post]
+(defn create-post! [post]
   (POST (api-posts-path)
         {:format :json
          :response-format :json :keywords? true
@@ -78,7 +80,7 @@
                     (secretary/dispatch! (root-path)))
          :error-handler error-handler}))
 
-(defn delete-post [post]
+(defn delete-post! [post]
   (DELETE (api-post-path (:id @post))
           {:format :json
            :response-format :json :keywwords? true
@@ -118,15 +120,15 @@
      [InputText post :category_name category_name]
      [:div
       (if is-new?
-        [:button {:on-click #(create-post post)} "Create Post"]
-        [:button {:on-click #(save-post post)} "Save Post"])]]))
+        [:button {:on-click #(create-post! post)} "Create Post"]
+        [:button {:on-click #(save-post! post)} "Save Post"])]]))
 
 (defn PostActions [post is-new?]
   (let [{:keys [id]} @post]
     [:div.actions
      [LinkTo (edit-post-path {:id id}) "edit"]
      (if-not is-new?
-       [:span "--" [:a {:href "javascript:void(0)" :on-click #(delete-post post)} "delete"]])]))
+       [:span "--" [:a {:href "javascript:void(0)" :on-click #(delete-post! post)} "delete"]])]))
 
 (defn PostTitle [post]
   (let [{:keys [id title]} @post is-new? (nil? id)]
@@ -183,10 +185,24 @@
   [layout [Post (r/atom default-new-post) true]])
 
 (defn about-page []
-  [layout [:div "About Wilbur"]])
+  [layout [:div.about-page [:h2 "About Wilbur"]]])
 
-(defn login-page []
-  [layout [:div "Login"]])
+(defn login! [user pass]
+  (println (str "user=" user "|pass=" pass ".")))
+
+(defn login-page [credentials]
+  (let [{:keys [username password]} @credentials]
+    (fn []
+      [layout
+       [:div.login-page
+        [:h2 "Login"]
+        [:div.input-field
+         [:input {:type "text"
+                  :on-change #(swap! credentials assoc :username (-> % .-target .-value))}]]
+        [:div.input-field
+         [:input {:type "password"
+                  :on-change #(swap! credentials assoc :password (-> % .-target .-value))}]]
+        [:button {:on-click #(login! (:username @credentials) (:password @credentials))} "login"]]])))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
@@ -212,7 +228,7 @@
   (session/put! :current-page #'about-page))
 
 (secretary/defroute login-path "/login" []
-  (session/put! :current-page #'login-page))
+  (session/put! :current-page #(login-page credentials)))
 
 (secretary/defroute "*" []
  (session/put! :current-page #(not-found-page "Page was not found")))

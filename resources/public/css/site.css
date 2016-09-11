@@ -42,7 +42,7 @@ h2.title a:hover {
   text-decoration: none;
 }
 
-article.post {
+div.login-page, div.about-page, article.post {
   background-color: #E4E2DF;
   padding: 15px;
   margin: 15px 0px;
