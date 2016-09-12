@@ -16,6 +16,12 @@
 ;;
 
 (deftest test-site
+  (testing "login.json"
+    (let [response (app (mock/content-type
+                          (mock/body (mock/request :post "/api/v1/login.json")
+                                     "{\"username\": \"test\", \"password\": \"secret\"}")
+                          "application/json"))]
+      (is (= (:status response) 200))))
   (testing "posts.json"
     (let [response (app (mock/request :get "/api/v1/posts.json"))]
       (is (= (:status response) 200))))
