@@ -19,7 +19,6 @@
 ;; ------------------------
 ;; App State
 (def app-state (r/atom {:current-user nil :ready true :posts []}))
-
 (def credentials (r/atom {:username nil :password nil}))
 
 (def default-new-post
@@ -30,6 +29,8 @@
 
 ;; (defn find-post-by-id [post-id]
 ;;   (r/atom (some #(if (= (js/parseInt post-id) (:id %)) %) (:posts @app-state))))
+(defn logged-in? []
+  (not (nil? (:current_user @app-state))))
 
 (defn find-post-index [post-id]
   (some #(if (= (js/parseInt post-id) (:id %)) (.indexOf (:posts @app-state) %))
