@@ -3,7 +3,7 @@
             [reagent.session :as session]
             [markdown.core :as md]
             [clojure.string :as str]
-            [ajax.core :refer [GET POST PATCH DELETE]]
+            [wilbur.api :as api]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]))
 
@@ -43,70 +43,6 @@
  (swap! object assoc field value))
 
 ;; ------------------------
-;; Backend hooks. All right.
-
-;; GET/POST
-(defn api-posts-path []
-  "/api/v1/posts.json")
-
-;; PATCH/DELETE
-(defn api-post-path [post-id]
-  (str "/api/v1/posts/" post-id ".json"))
-
-(defn api-login-path []
-  "/api/v1/login.json")
-
-(defn error-handler [details]
-  (.warn js/console (str "Failed to fetch posts from the server: " details)))
-
-(defn load-posts! [app-state]
-  (GET (api-posts-path)
-       {:handler (fn [posts] (swap! app-state assoc :posts (:posts posts)))
-        :error-handler error-handler
-        :response-format :json :keywords? true}))
-
-(defn save-post! [post]
-  (PATCH (api-post-path (:id @post))
-         {:format :json
-          :response-format :json :keywords? true
-          :params {:post @post} ;; {:post {:id 5 :title "Hello" :body "Body" :category_name "le category"}
-          :handler (fn [post]
-                     (secretary/dispatch! (post-path {:id (:id post)})))
-          :error-handler error-handler}))
-
-(defn create-post! [post]
-  (POST (api-posts-path)
-        {:format :json
-         :response-format :json :keywords? true
-         :params {:post (dissoc @post :id)} ;; {:post {:title "Hello" :body "Body" :category_name "le category"}
-         :handler (fn [post]
-                    (swap! app-state update :posts conj post)
-                    (secretary/dispatch! (root-path)))
-         :error-handler error-handler}))
-
-(defn delete-post! [post]
-  (DELETE (api-post-path (:id @post))
-          {:format :json
-           :response-format :json :keywwords? true
-           :handler (fn [_]
-                        (swap! app-state update-in [:posts]
-                               (fn [posts] (vec (remove #(= (:id @post) (:id %)) posts))))
-                        (secretary/dispatch! (root-path)))
-           :error-handler error-handler}))
-
-(defn login! [username password error]
-  (POST (api-login-path)
-        {:format :json
-         :response-format :json :keywords? true
-         :params {:username username :password password}
-         :handler (fn [response]
-
-                    (println response)
-
-                    )
-         :error-handler #(reset! error (get-in % [:response :error]))}))
-
-;; ------------------------
 ;; Utility Components
 
 (defn LinkTo [path text & attributes]
@@ -136,15 +72,15 @@
      [InputText post :category_name category_name]
      [:div
       (if is-new?
-        [:button {:on-click #(create-post! post)} "Create Post"]
-        [:button {:on-click #(save-post! post)} "Save Post"])]]))
+        [:button {:on-click #(api/create-post! post "")} "Create Post"]
+        [:button {:on-click #(api/save-post! post "")} "Save Post"])]]))
 
 (defn PostActions [post is-new?]
   (let [{:keys [id]} @post]
     [:div.actions
      [LinkTo (edit-post-path {:id id}) "edit"]
      (if-not is-new?
-       [:span "--" [:a {:href "javascript:void(0)" :on-click #(delete-post! post)} "delete"]])]))
+       [:span "--" [:a {:href "javascript:void(0)" :on-click #(api/delete-post! post "")} "delete"]])]))
 
 (defn PostTitle [post]
   (let [{:keys [id title]} @post is-new? (nil? id)]
@@ -220,7 +156,7 @@
                   :on-change #(swap! credentials assoc :password (-> % .-target .-value))}]]
         (when-let [error @error]
           [:p.error error])
-        [:button {:on-click #(login! (:username @credentials) (:password @credentials) error)} 
+        [:button {:on-click #(api/login! (:username @credentials) (:password @credentials) error)} 
          "login"]]])))
 
 (defn current-page []
@@ -267,5 +203,5 @@
      (fn [path]
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
-  (load-posts! app-state)
+  (api/load-posts! app-state)
   (mount-root))
