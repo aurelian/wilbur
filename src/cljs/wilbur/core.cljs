@@ -18,7 +18,7 @@
 
 ;; ------------------------
 ;; App State
-(def app-state (r/atom {:current-user nil :ready true :posts []}))
+(def app-state (r/atom {:current-user "admin" :ready true :posts []}))
 (def credentials (r/atom {:username nil :password nil}))
 
 (def default-new-post
@@ -61,6 +61,11 @@
     [:textarea {:value value :rows 20 :cols 50
                 :on-change #(update-field object field (.. % -target -value))}]])
 
+(defn Authenticated? [yes-component no-component]
+  (if (logged-in?)
+    yes-component
+    no-component)
+)
 ;; ------------------------
 ;; Main Components
 
@@ -70,10 +75,12 @@
      [InputText post :title title]
      [TextArea  post :body body]
      [InputText post :category_name category_name]
-     [:div
-      (if is-new?
-        [:button {:on-click #(api/create-post! post "")} "Create Post"]
-        [:button {:on-click #(api/save-post! post "")} "Save Post"])]]))
+     [Authenticated? [:div.actions (if is-new?
+                                    [:button {:on-click #(api/create-post! post "")} "Create Post"]
+                                    [:button {:on-click #(api/save-post! post "")} "Save Post"]
+                                   )]
+                     [:span "--not auth"]
+      ]]))
 
 (defn PostActions [post is-new?]
   (let [{:keys [id]} @post]
@@ -114,7 +121,10 @@
     [:div.content content]
     [:footer [:ul
               [:li (LinkTo (new-post-path) "new post")]
-              [:li (LinkTo (login-path) "login")]
+              [:li (if-not (logged-in?)
+                     (LinkTo (login-path) "login")
+                     [:p "hello"]
+                     )]
               [:li (LinkTo (about-path) "go to about page")]]]])
 
 (defn not-found-page [message]
@@ -171,7 +181,9 @@
   (session/put! :current-page posts-page))
 
 (secretary/defroute new-post-path "/posts/new" []
-  (session/put! :current-page #(new-post-page)))
+  (if (logged-in?)
+    (session/put! :current-page #(new-post-page))
+    (accountant/navigate! (login-path))))
 
 (secretary/defroute post-path "/posts/:id" [id]
   (session/put! :current-page #(post-page id)))
